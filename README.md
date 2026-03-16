@@ -1,4 +1,4 @@
-# DingTalk Channel for OpenClaw
+# DingTalk Channel for nexa
 
 钉钉企业内部机器人 Channel 插件，使用 Stream 模式（无需公网 IP）。
 
@@ -16,10 +16,10 @@
 
 ### 方法 A：通过远程仓库安装 (推荐)
 
-直接运行 openclaw 插件安装命令，openclaw 会自动处理下载、安装依赖和注册：
+直接运行 nexa 插件安装命令，nexa 会自动处理下载、安装依赖和注册：
 
 ```bash
-openclaw plugins install https://github.com/soimy/clawdbot-channel-dingtalk.git
+nexa plugins install https://github.com/soimy/clawdbot-channel-dingtalk.git
 ```
 
 ### 方法 B：通过本地源码安装
@@ -28,26 +28,26 @@ openclaw plugins install https://github.com/soimy/clawdbot-channel-dingtalk.git
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/soimy/openclaw-channel-dingtalk.git
-cd openclaw-channel-dingtalk
+git clone https://github.com/soimy/nexa-channel-dingtalk.git
+cd nexa-channel-dingtalk
 
 # 2. 安装依赖 (必需)
 npm install
 
 # 3. 以链接模式安装 (方便修改代码后实时生效)
-openclaw plugins install -l .
+nexa plugins install -l .
 ```
 
 ### 方法 C：手动安装
 
-1. 将本目录下载或复制到 `~/.openclaw/extensions/dingtalk`。
-2. 确保包含 `index.ts`, `openclaw.plugin.json` 和 `package.json`。
-3. 运行 `openclaw plugins list` 确认 `dingtalk` 已显示在列表中。
+1. 将本目录下载或复制到 `~/.nexa/extensions/dingtalk`。
+2. 确保包含 `index.ts`, `nexa.plugin.json` 和 `package.json`。
+3. 运行 `nexa plugins list` 确认 `dingtalk` 已显示在列表中。
 
 ## 更新
 
 ```
-openclaw plugins update dingtalk
+nexa plugins update dingtalk
 ```
 
 ## 配置
@@ -85,10 +85,10 @@ openclaw plugins update dingtalk
 5. 按需设计卡片排版,点击保存并发布
 6. 记下模板中定义的内容字段名称
 7. 复制模板 ID（格式如：`xxxxx-xxxxx-xxxxx.schema`）
-8. 将 templateId 配置到 `openclaw.json` 的 `cardTemplateId` 字段
-9. 或在OpenClaw控制台的Channel标签->Dingtalk配置面板-> Card Template Id填入
-10. 将记下的内容字段变量名配置到 `openclaw.json` 的 `cardTemplateKey` 字段
-11. 或在OpenClaw控制台的Channel标签->Dingtalk配置面板-> Card Template Key填入
+8. 将 templateId 配置到 `nexa.json` 的 `cardTemplateId` 字段
+9. 或在nexa控制台的Channel标签->Dingtalk配置面板-> Card Template Id填入
+10. 将记下的内容字段变量名配置到 `nexa.json` 的 `cardTemplateKey` 字段
+11. 或在nexa控制台的Channel标签->Dingtalk配置面板-> Card Template Key填入
 
 **说明：**
 
@@ -121,9 +121,9 @@ openclaw plugins update dingtalk
 - **Corp ID** (企业 ID)
 - **Agent ID** (应用 ID)
 
-### 5. 配置 OpenClaw
+### 5. 配置 nexa
 
-在 `~/.openclaw/openclaw.json` 的 `channels` 下添加：
+在 `~/.nexa/nexa.json` 的 `channels` 下添加：
 
 > 只添加dingtalk部分，内容自己替换
 
@@ -153,7 +153,7 @@ openclaw plugins update dingtalk
 ### 6. 重启 Gateway
 
 ```bash
-openclaw gateway restart
+nexa gateway restart
 ```
 
 ## 配置选项
@@ -320,7 +320,7 @@ openclaw gateway restart
 
 1. 确认应用已发布
 2. 确认消息接收模式是 Stream
-3. 检查 Gateway 日志：`openclaw logs | grep dingtalk`
+3. 检查 Gateway 日志：`nexa logs | grep dingtalk`
 
 ### 群消息无响应
 
@@ -340,8 +340,8 @@ openclaw gateway restart
 1. 克隆仓库并安装依赖
 
 ```bash
-git clone https://github.com/soimy/openclaw-channel-dingtalk.git
-cd openclaw-channel-dingtalk
+git clone https://github.com/soimy/nexa-channel-dingtalk.git
+cd nexa-channel-dingtalk
 npm install
 ```
 
@@ -371,7 +371,7 @@ src/
 index.ts              - 插件注册（29 行）
 utils.ts              - 工具函数（110 行）
 
-openclaw.plugin.json  - 插件配置
+nexa.plugin.json  - 插件配置
 package.json          - 项目配置
 README.md             - 本文件
 ```

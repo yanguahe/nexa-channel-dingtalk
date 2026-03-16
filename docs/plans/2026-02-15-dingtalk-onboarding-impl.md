@@ -6,7 +6,7 @@
 
 **Architecture:** Create `src/onboarding.ts` with `ChannelOnboardingAdapter` implementation, add helper functions to `types.ts`, and register adapter in `channel.ts`. Follow tlon extension pattern exactly.
 
-**Tech Stack:** TypeScript, OpenClaw Plugin SDK (ChannelOnboardingAdapter, WizardPrompter)
+**Tech Stack:** TypeScript, nexa Plugin SDK (ChannelOnboardingAdapter, WizardPrompter)
 
 ---
 
@@ -18,10 +18,10 @@
 
 **Step 1: Add DEFAULT_ACCOUNT_ID import**
 
-Add at the beginning of the imports section (after line 11 where OpenClawConfig is imported):
+Add at the beginning of the imports section (after line 11 where NexaConfig is imported):
 
 ```typescript
-import { DEFAULT_ACCOUNT_ID } from 'openclaw/plugin-sdk';
+import { DEFAULT_ACCOUNT_ID } from 'nexa/plugin-sdk';
 ```
 
 **Step 2: Add listDingTalkAccountIds function**
@@ -32,7 +32,7 @@ Append to end of file (after line 645):
 /**
  * List all DingTalk account IDs from config
  */
-export function listDingTalkAccountIds(cfg: OpenClawConfig): string[] {
+export function listDingTalkAccountIds(cfg: NexaConfig): string[] {
   const dingtalk = cfg.channels?.dingtalk as DingTalkChannelConfig | undefined;
   if (!dingtalk) return [];
 
@@ -55,7 +55,7 @@ export function listDingTalkAccountIds(cfg: OpenClawConfig): string[] {
  * Resolve a specific DingTalk account configuration
  */
 export function resolveDingTalkAccount(
-  cfg: OpenClawConfig,
+  cfg: NexaConfig,
   accountId?: string | null
 ): DingTalkConfig & { configured: boolean } {
   const id = accountId || DEFAULT_ACCOUNT_ID;
@@ -137,7 +137,7 @@ git commit -m "feat: add listDingTalkAccountIds and resolveDingTalkAccount helpe
  * Follows the same pattern as tlon extension.
  */
 
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { NexaConfig } from 'nexa/plugin-sdk';
 import {
   formatDocsLink,
   promptAccountId,
@@ -146,7 +146,7 @@ import {
   applyAccountNameToChannelSection,
   type ChannelOnboardingAdapter,
   type WizardPrompter,
-} from 'openclaw/plugin-sdk';
+} from 'nexa/plugin-sdk';
 import type { DingTalkConfig } from './types.js';
 import { listDingTalkAccountIds, resolveDingTalkAccount } from './types.js';
 
@@ -160,13 +160,13 @@ function isConfigured(account: DingTalkConfig): boolean {
 }
 
 /**
- * Apply account configuration to OpenClawConfig
+ * Apply account configuration to NexaConfig
  */
 function applyAccountConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   accountId: string;
   input: Partial<DingTalkConfig>;
-}): OpenClawConfig {
+}): NexaConfig {
   const { cfg, accountId, input } = params;
   const useDefault = accountId === DEFAULT_ACCOUNT_ID;
 

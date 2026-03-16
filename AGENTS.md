@@ -1,11 +1,11 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-01-31
-**Type:** OpenClaw DingTalk Channel Plugin
+**Type:** nexa DingTalk Channel Plugin
 
 ## OVERVIEW
 
-DingTalk (钉钉) enterprise bot channel plugin using Stream mode (WebSocket, no public IP required). Part of OpenClaw ecosystem.
+DingTalk (钉钉) enterprise bot channel plugin using Stream mode (WebSocket, no public IP required). Part of nexa ecosystem.
 
 ## STRUCTURE
 
@@ -84,8 +84,8 @@ DingTalk (钉钉) enterprise bot channel plugin using Stream mode (WebSocket, no
 **Monorepo Structure:**
 
 - Extends `../../tsconfig.json` (parent repo)
-- Path mapping: `openclaw/plugin-sdk` → `../../src/plugin-sdk/index.ts`
-- Dev dependency: `openclaw: workspace:*`
+- Path mapping: `nexa/plugin-sdk` → `../../src/plugin-sdk/index.ts`
+- Dev dependency: `nexa: workspace:*`
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -121,7 +121,7 @@ DingTalk (钉钉) enterprise bot channel plugin using Stream mode (WebSocket, no
 2. Extract content (text/richText/media)
 3. Download media to temp dir if present
 4. Check authorization (dmPolicy + allowFrom)
-5. Route to agent via OpenClaw runtime
+5. Route to agent via nexa runtime
 6. Create AI Card if messageType=card
 7. Send "thinking..." message
 8. Stream AI response via dispatcher
@@ -151,14 +151,14 @@ npm run lint
 npm run lint:fix
 ```
 
-**Note:** No build script - plugin runs directly via OpenClaw runtime.
+**Note:** No build script - plugin runs directly via nexa runtime.
 
 ## NOTES
 
-**OpenClaw Plugin Architecture:**
+**nexa Plugin Architecture:**
 
 - Entry point: `index.ts` exports default plugin object
-- Plugin register: `register(api: OpenClawPluginApi)` called by runtime
+- Plugin register: `register(api: NexaPluginApi)` called by runtime
 - Channel registration: `api.registerChannel({ plugin: dingtalkPlugin })`
 - Configuration: Read from `cfg.channels.dingtalk`
 - Multiple accounts supported via `accounts` object in config
@@ -174,7 +174,7 @@ npm run lint:fix
 
 **Package.json Issue:**
 
-- `openclaw` configuration object duplicated (lines 37-63 and 64-90)
+- `nexa` configuration object duplicated (lines 37-63 and 64-90)
 
 **Dependencies:**
 
@@ -185,4 +185,4 @@ npm run lint:fix
 **No Tests:**
 
 - No test files or test configs present
-- Testing likely done at OpenClaw monorepo root
+- Testing likely done at nexa monorepo root

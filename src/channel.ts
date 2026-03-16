@@ -4,8 +4,8 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
-import { buildChannelConfigSchema } from 'openclaw/plugin-sdk';
+import type { NexaConfig } from 'nexa/plugin-sdk';
+import { buildChannelConfigSchema } from 'nexa/plugin-sdk';
 import { maskSensitiveData, cleanupOrphanedTempFiles, retryWithBackoff } from '../utils';
 import { getDingTalkRuntime } from './runtime';
 import { DingTalkConfigSchema } from './config-schema.js';
@@ -292,7 +292,7 @@ function stripTargetPrefix(target: string): { targetId: string; isExplicitUser: 
 
 // ============ Config Helpers ============
 
-function getConfig(cfg: OpenClawConfig, accountId?: string): DingTalkConfig {
+function getConfig(cfg: NexaConfig, accountId?: string): DingTalkConfig {
   const dingtalkCfg = cfg?.channels?.dingtalk as DingTalkConfig | undefined;
   if (!dingtalkCfg) return {} as DingTalkConfig;
 
@@ -303,7 +303,7 @@ function getConfig(cfg: OpenClawConfig, accountId?: string): DingTalkConfig {
   return dingtalkCfg;
 }
 
-function isConfigured(cfg: OpenClawConfig, accountId?: string): boolean {
+function isConfigured(cfg: NexaConfig, accountId?: string): boolean {
   const config = getConfig(cfg, accountId);
   return Boolean(config.clientId && config.clientSecret);
 }
@@ -339,11 +339,11 @@ function resolveUserPath(input: string): string {
 }
 
 function resolveDefaultAgentWorkspaceDir(): string {
-  const profile = process.env.OPENCLAW_PROFILE?.trim();
+  const profile = process.env.NEXA_PROFILE?.trim();
   if (profile && profile.toLowerCase() !== 'default') {
-    return path.join(os.homedir(), '.openclaw', `workspace-${profile}`);
+    return path.join(os.homedir(), '.nexa', `workspace-${profile}`);
   }
-  return path.join(os.homedir(), '.openclaw', 'workspace');
+  return path.join(os.homedir(), '.nexa', 'workspace');
 }
 
 interface AgentConfig {
@@ -352,7 +352,7 @@ interface AgentConfig {
   workspace?: string;
 }
 
-function resolveDefaultAgentId(cfg: OpenClawConfig): string {
+function resolveDefaultAgentId(cfg: NexaConfig): string {
   const agents: AgentConfig[] = cfg.agents?.list ?? [];
   if (agents.length === 0) return DEFAULT_AGENT_ID;
   const defaults = agents.filter((agent: AgentConfig) => agent?.default);
@@ -360,7 +360,7 @@ function resolveDefaultAgentId(cfg: OpenClawConfig): string {
   return normalizeAgentId(chosen || DEFAULT_AGENT_ID);
 }
 
-function resolveAgentWorkspaceDir(cfg: OpenClawConfig, agentId: string): string {
+function resolveAgentWorkspaceDir(cfg: NexaConfig, agentId: string): string {
   const id = normalizeAgentId(agentId);
   const agents: AgentConfig[] = cfg.agents?.list ?? [];
   const agent = agents.find((entry: AgentConfig) => normalizeAgentId(entry?.id) === id);
@@ -372,7 +372,7 @@ function resolveAgentWorkspaceDir(cfg: OpenClawConfig, agentId: string): string 
     if (fallback) return resolveUserPath(fallback);
     return resolveDefaultAgentWorkspaceDir();
   }
-  return path.join(os.homedir(), '.openclaw', `workspace-${id}`);
+  return path.join(os.homedir(), '.nexa', `workspace-${id}`);
 }
 
 // Get Access Token with retry logic - uses clientId-based cache for multi-account support
@@ -436,7 +436,7 @@ async function sendProactiveTextOrMarkdown(
     : 'https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend';
 
   // Use shared helper function for markdown detection and title extraction
-  const { useMarkdown, title } = detectMarkdownAndExtractTitle(text, options, 'OpenClaw 提醒');
+  const { useMarkdown, title } = detectMarkdownAndExtractTitle(text, options, 'nexa 提醒');
 
   log?.debug?.(
     `[DingTalk] Sending proactive message to ${isGroup ? 'group' : 'user'} ${resolvedTarget} with title "${title}"`
@@ -554,7 +554,7 @@ async function sendProactiveMedia(
 }
 
 // Download media file to agent workspace (sandbox-compatible)
-// workspacePath: the agent's workspace directory (e.g., /home/node/.openclaw/workspace)
+// workspacePath: the agent's workspace directory (e.g., /home/node/.nexa/workspace)
 async function downloadMedia(
   config: DingTalkConfig,
   downloadCode: string,
@@ -922,7 +922,7 @@ async function streamAICard(
         `1. 前往钉钉开发者后台检查该模板的“变量管理”\n` +
         `2. 确保配置中的 \`cardTemplateKey\` 与模板中用于显示内容的字段变量名完全一致\n\n` +
         `*注意：当前及后续消息将自动转为 Markdown 发送，直到问题修复。*\n` +
-        `*参考文档: https://github.com/soimy/openclaw-channel-dingtalk/blob/main/README.md#3-%E5%BB%BA%E7%AB%8B%E5%8D%A1%E7%89%87%E6%A8%A1%E6%9D%BF%E5%8F%AF%E9%80%89`;
+        `*参考文档: https://github.com/soimy/nexa-channel-dingtalk/blob/main/README.md#3-%E5%BB%BA%E7%AB%8B%E5%8D%A1%E7%89%87%E6%A8%A1%E6%9D%BF%E5%8F%AF%E9%80%89`;
 
       log?.error?.(
         `[DingTalk][AICard] Streaming failed with 500 unknownError. Key: ${usedKey}, Template: ${cardTemplateId}. ` +
@@ -1146,7 +1146,7 @@ async function handleDingTalkMessage(params: HandleDingTalkMessageParams): Promi
     cfg,
     channel: 'dingtalk',
     accountId,
-    // agent权限和openclaw保持一致
+    // agent权限和nexa保持一致
     peer: { kind: isDirect ? 'direct' : 'group', id: isDirect ? senderId : groupId },
   });
 
@@ -1345,7 +1345,7 @@ async function handleDingTalkMessage(params: HandleDingTalkMessageParams): Promi
       }
     }
   }
-  // Note: Media cleanup is handled by openclaw's media storage mechanism
+  // Note: Media cleanup is handled by nexa's media storage mechanism
   // Files saved via rt.channel.media.saveMediaBuffer are managed automatically
 }
 
@@ -1363,7 +1363,7 @@ export const dingtalkPlugin: DingTalkChannelPlugin = {
   configSchema: buildChannelConfigSchema(DingTalkConfigSchema),
   onboarding: dingtalkOnboardingAdapter as {
     channel: string;
-    getStatus: (params: { cfg: OpenClawConfig }) => Promise<{
+    getStatus: (params: { cfg: NexaConfig }) => Promise<{
       channel: string;
       configured: boolean;
       statusLines: string[];
@@ -1371,11 +1371,11 @@ export const dingtalkPlugin: DingTalkChannelPlugin = {
       quickstartScore: number;
     }>;
     configure: (params: {
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       prompter: unknown;
       accountOverrides: Record<string, string>;
       shouldPromptAccountIds: boolean;
-    }) => Promise<{ cfg: OpenClawConfig; accountId: string }>;
+    }) => Promise<{ cfg: NexaConfig; accountId: string }>;
   },
   capabilities: {
     chatTypes: ['direct', 'group'],
@@ -1388,7 +1388,7 @@ export const dingtalkPlugin: DingTalkChannelPlugin = {
   },
   reload: { configPrefixes: ['channels.dingtalk'] },
   config: {
-    listAccountIds: (cfg: OpenClawConfig): string[] => {
+    listAccountIds: (cfg: NexaConfig): string[] => {
       const config = getConfig(cfg);
       return config.accounts && Object.keys(config.accounts).length > 0
         ? Object.keys(config.accounts)
@@ -1396,7 +1396,7 @@ export const dingtalkPlugin: DingTalkChannelPlugin = {
           ? ['default']
           : [];
     },
-    resolveAccount: (cfg: OpenClawConfig, accountId?: string | null) => {
+    resolveAccount: (cfg: NexaConfig, accountId?: string | null) => {
       const config = getConfig(cfg);
       const id = accountId || 'default';
       const account = config.accounts?.[id];

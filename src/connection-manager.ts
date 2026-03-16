@@ -29,6 +29,7 @@ export class ConnectionManager {
 
   // Runtime monitoring resources
   private healthCheckInterval?: NodeJS.Timeout;
+  private stormResetTimer?: NodeJS.Timeout;
   private socketCloseHandler?: (code: number, reason: string) => void;
   private socketErrorHandler?: (error: Error) => void;
   private monitoredSocket?: any; // Store the socket instance we attached listeners to
@@ -36,6 +37,16 @@ export class ConnectionManager {
   // Sleep abort control
   private sleepTimeout?: NodeJS.Timeout;
   private sleepResolve?: () => void;
+
+  // Reconnect-storm detection: track recent connection lifetimes to detect
+  // rapid disconnect cycles (e.g. server-side rate limiting) and escalate
+  // the backoff delay to minute-scale cooldowns.
+  private static readonly STORM_WINDOW = 3; // consecutive short-lived connections to trigger
+  private static readonly SHORT_LIVED_MS = 30_000; // < 30 s counts as "short"
+  private static readonly COOLDOWN_DELAYS_MS = [30_000, 60_000, 120_000]; // escalating cooldown
+  private recentLifetimes: number[] = [];
+  private lastConnectedAt: number = 0;
+  private consecutiveStormCycles: number = 0;
 
   // Client reference
   private client: DWClient;
@@ -52,6 +63,62 @@ export class ConnectionManager {
       this.config.onStateChange(this.state, error);
     }
   }
+
+  // ── Reconnect-storm helpers ────────────────────────────────────
+
+  /** Record that a connection was successfully established. */
+  private markConnected(): void {
+    this.lastConnectedAt = Date.now();
+  }
+
+  /**
+   * Record a disconnection, evaluate whether we are in a reconnect storm,
+   * and return a cooldown delay (ms) if the storm threshold is reached.
+   * Returns 0 when no cooldown is needed.
+   */
+  private markDisconnectedAndEvaluateStorm(): number {
+    if (this.lastConnectedAt === 0) return 0;
+
+    const lifetime = Date.now() - this.lastConnectedAt;
+    this.lastConnectedAt = 0;
+
+    // Keep only the most recent STORM_WINDOW entries
+    this.recentLifetimes.push(lifetime);
+    if (this.recentLifetimes.length > ConnectionManager.STORM_WINDOW) {
+      this.recentLifetimes.shift();
+    }
+
+    // Need at least STORM_WINDOW samples to judge
+    if (this.recentLifetimes.length < ConnectionManager.STORM_WINDOW) return 0;
+
+    const allShort = this.recentLifetimes.every((lt) => lt < ConnectionManager.SHORT_LIVED_MS);
+    if (!allShort) {
+      // At least one recent connection lived long enough – no storm.
+      this.consecutiveStormCycles = 0;
+      return 0;
+    }
+
+    // Storm detected – pick an escalating cooldown delay
+    const idx = Math.min(this.consecutiveStormCycles, ConnectionManager.COOLDOWN_DELAYS_MS.length - 1);
+    const cooldown = ConnectionManager.COOLDOWN_DELAYS_MS[idx];
+    this.consecutiveStormCycles++;
+
+    const avgLifetime = (this.recentLifetimes.reduce((a, b) => a + b, 0) / this.recentLifetimes.length / 1000).toFixed(1);
+    this.log?.warn?.(
+      `[${this.accountId}] Reconnect storm detected: last ${ConnectionManager.STORM_WINDOW} connections ` +
+        `averaged ${avgLifetime}s (< ${ConnectionManager.SHORT_LIVED_MS / 1000}s threshold). ` +
+        `Cooling down for ${cooldown / 1000}s before next attempt.`,
+    );
+    return cooldown;
+  }
+
+  /** Reset storm tracking after a connection proves stable. */
+  private resetStormTracking(): void {
+    this.recentLifetimes = [];
+    this.consecutiveStormCycles = 0;
+  }
+
+  // ── Backoff ───────────────────────────────────────────────────
 
   /**
    * Calculate next reconnection delay with exponential backoff and jitter
@@ -77,6 +144,27 @@ export class ConnectionManager {
   }
 
   /**
+   * Clear DWClient's internal heartbeat interval to prevent a race condition
+   * where the old timer fires ping() on a new socket still in CONNECTING state.
+   * Also disconnects the old socket cleanly so no stale listeners remain.
+   */
+  private clearClientInternals(): void {
+    const client = this.client as any;
+    if (client.heartbeatIntervallId !== undefined) {
+      clearInterval(client.heartbeatIntervallId);
+      client.heartbeatIntervallId = undefined;
+      this.log?.debug?.(`[${this.accountId}] Cleared DWClient heartbeat interval`);
+    }
+    if (client.socket) {
+      try {
+        client.socket.removeAllListeners();
+        client.socket.terminate();
+      } catch {}
+      client.socket = undefined;
+    }
+  }
+
+  /**
    * Attempt to connect with retry logic
    */
   private async attemptConnection(): Promise<ConnectionAttemptResult> {
@@ -91,6 +179,10 @@ export class ConnectionManager {
     this.log?.info?.(`[${this.accountId}] Connection attempt ${this.attemptCount}/${this.config.maxAttempts}...`);
 
     try {
+      // Clear stale heartbeat timer & socket from the previous connection
+      // before creating a new one, preventing the ping-on-CONNECTING race.
+      this.clearClientInternals();
+
       // Call DWClient connect method
       await this.client.connect();
 
@@ -117,6 +209,7 @@ export class ConnectionManager {
       this.notifyStateChange();
       const successfulAttempt = this.attemptCount;
       this.attemptCount = 0; // Reset counter on success
+      this.markConnected();
 
       this.log?.info?.(`[${this.accountId}] DingTalk Stream client connected successfully`);
 
@@ -218,6 +311,17 @@ export class ConnectionManager {
       }
     }, 5000); // Check every 5 seconds
 
+    // Once the connection survives past the short-lived threshold, reset
+    // storm tracking so future disconnects start with a clean slate.
+    if (this.stormResetTimer) clearTimeout(this.stormResetTimer);
+    this.stormResetTimer = setTimeout(() => {
+      this.stormResetTimer = undefined;
+      if (this.state === ConnectionStateEnum.CONNECTED) {
+        this.resetStormTracking();
+        this.log?.debug?.(`[${this.accountId}] Connection stable for ${ConnectionManager.SHORT_LIVED_MS / 1000}s, storm tracking reset`);
+      }
+    }, ConnectionManager.SHORT_LIVED_MS);
+
     // Additionally, if we have access to the socket, monitor its events
     // The DWClient uses 'ws' WebSocket library which extends EventEmitter
     if (client.socket) {
@@ -262,6 +366,11 @@ export class ConnectionManager {
       this.log?.debug?.(`[${this.accountId}] Health check interval cleared`);
     }
 
+    if (this.stormResetTimer) {
+      clearTimeout(this.stormResetTimer);
+      this.stormResetTimer = undefined;
+    }
+
     // Remove socket event listeners from the stored socket instance
     if (this.monitoredSocket) {
       const socket = this.monitoredSocket;
@@ -295,8 +404,9 @@ export class ConnectionManager {
     // Clear any existing timer
     this.clearReconnectTimer();
 
-    // Start reconnection with initial delay
-    const delay = this.calculateNextDelay(0);
+    // Check for reconnect storm and use cooldown delay if needed
+    const cooldown = this.markDisconnectedAndEvaluateStorm();
+    const delay = cooldown > 0 ? cooldown : this.calculateNextDelay(0);
     this.log?.info?.(`[${this.accountId}] Scheduling reconnection in ${(delay / 1000).toFixed(2)}s`);
 
     this.reconnectTimer = setTimeout(() => {
@@ -325,7 +435,9 @@ export class ConnectionManager {
       this.notifyStateChange(err.message);
 
       // Continue runtime recovery instead of getting stuck in FAILED.
-      const delay = this.calculateNextDelay(0);
+      // Honour any active storm cooldown so we don't hammer the server.
+      const cooldown = this.markDisconnectedAndEvaluateStorm();
+      const delay = cooldown > 0 ? cooldown : this.calculateNextDelay(0);
       this.attemptCount = 0;
       this.clearReconnectTimer();
       this.log?.warn?.(
@@ -357,7 +469,8 @@ export class ConnectionManager {
     // Clean up runtime monitoring resources
     this.cleanupRuntimeMonitoring();
 
-    // Disconnect client
+    // Clear SDK heartbeat timer, then disconnect client
+    this.clearClientInternals();
     try {
       this.client.disconnect();
     } catch (err: any) {

@@ -2,7 +2,7 @@
 
 **日期:** 2026-02-15
 **状态:** 设计完成，待实现
-**参考:** tlon 扩展 (https://github.com/openclaw/openclaw/tree/main/extensions/tlon)
+**参考:** tlon 扩展 (https://github.com/nexa/nexa/tree/main/extensions/tlon)
 
 ## 概述
 
@@ -10,7 +10,7 @@
 
 ## 目标
 
-1. 提供与 OpenClaw 其他 channel 一致的 onboarding 体验
+1. 提供与 nexa 其他 channel 一致的 onboarding 体验
 2. 支持多账户配置
 3. 分步引导必填和可选配置项
 4. 支持增量配置（后续修改部分参数）
@@ -52,7 +52,7 @@ src/
 ### 1. src/onboarding.ts
 
 ```typescript
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { NexaConfig } from 'nexa/plugin-sdk';
 import {
   formatDocsLink,
   promptAccountId,
@@ -60,7 +60,7 @@ import {
   normalizeAccountId,
   type ChannelOnboardingAdapter,
   type WizardPrompter,
-} from 'openclaw/plugin-sdk';
+} from 'nexa/plugin-sdk';
 import type { DingTalkConfig } from './types.js';
 import { listDingTalkAccountIds, resolveDingTalkAccount } from './types.js';
 
@@ -71,10 +71,10 @@ function isConfigured(account: DingTalkConfig): boolean {
 }
 
 function applyAccountConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   accountId: string;
   input: Partial<DingTalkConfig>;
-}): OpenClawConfig {
+}): NexaConfig {
   // 实现配置合并逻辑
 }
 
@@ -125,9 +125,9 @@ export const dingtalkOnboardingAdapter: ChannelOnboardingAdapter = {
 ### 2. src/types.ts 新增函数
 
 ```typescript
-import { DEFAULT_ACCOUNT_ID } from 'openclaw/plugin-sdk';
+import { DEFAULT_ACCOUNT_ID } from 'nexa/plugin-sdk';
 
-export function listDingTalkAccountIds(cfg: OpenClawConfig): string[] {
+export function listDingTalkAccountIds(cfg: NexaConfig): string[] {
   const dingtalk = cfg.channels?.dingtalk as DingTalkChannelConfig | undefined;
   if (!dingtalk) return [];
 
@@ -145,7 +145,7 @@ export function listDingTalkAccountIds(cfg: OpenClawConfig): string[] {
 }
 
 export function resolveDingTalkAccount(
-  cfg: OpenClawConfig,
+  cfg: NexaConfig,
   accountId?: string | null
 ): DingTalkConfig & { configured: boolean } {
   const id = accountId || DEFAULT_ACCOUNT_ID;
@@ -242,11 +242,11 @@ export const dingtalkPlugin: DingTalkChannelPlugin = {
 
 | 风险                  | 影响 | 缓解措施                 |
 | --------------------- | ---- | ------------------------ |
-| OpenClaw SDK API 变更 | 中   | 使用类型导入，编译时报错 |
+| nexa SDK API 变更 | 中   | 使用类型导入，编译时报错 |
 | 配置格式不兼容        | 高   | 参考 tlon 实现确保一致性 |
 
 ## 参考
 
-- tlon onboarding: https://github.com/openclaw/openclaw/blob/main/extensions/tlon/src/onboarding.ts
-- OpenClaw SDK types: https://github.com/openclaw/openclaw/blob/main/src/plugins/types.ts
-- ChannelPlugin interface: https://github.com/openclaw/openclaw/blob/main/src/channels/plugins/types.plugin.ts
+- tlon onboarding: https://github.com/nexa/nexa/blob/main/extensions/tlon/src/onboarding.ts
+- nexa SDK types: https://github.com/nexa/nexa/blob/main/src/plugins/types.ts
+- ChannelPlugin interface: https://github.com/nexa/nexa/blob/main/src/channels/plugins/types.plugin.ts

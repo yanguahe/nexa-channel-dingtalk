@@ -9,12 +9,12 @@
  * - Session and token management
  */
 
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { NexaConfig } from 'nexa/plugin-sdk';
 
 /**
- * DingTalk channel configuration (extends base OpenClaw config)
+ * DingTalk channel configuration (extends base nexa config)
  */
-export interface DingTalkConfig extends OpenClawConfig {
+export interface DingTalkConfig extends NexaConfig {
   clientId: string;
   clientSecret: string;
   robotCode?: string;
@@ -185,7 +185,7 @@ export interface SessionWebhookResponse {
  * Message handler parameters
  */
 export interface HandleDingTalkMessageParams {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   accountId: string;
   data: DingTalkInboundMessage;
   sessionWebhook: string;
@@ -283,7 +283,7 @@ export interface RetryOptions {
 
 /**
  * Channel log sink
- * Matches OpenClaw SDK's ChannelLogSink type
+ * Matches nexa SDK's ChannelLogSink type
  */
 export interface ChannelLogSink {
   info: (msg: string) => void;
@@ -299,7 +299,7 @@ export type Logger = ChannelLogSink;
 
 /**
  * Channel account snapshot
- * Matches OpenClaw SDK's ChannelAccountSnapshot type
+ * Matches nexa SDK's ChannelAccountSnapshot type
  */
 export interface ChannelAccountSnapshot {
   accountId: string;
@@ -362,10 +362,10 @@ export type ChannelSnapshot = ChannelAccountSnapshot;
 
 /**
  * Plugin gateway start context
- * Matches OpenClaw SDK's ChannelGatewayContext type
+ * Matches nexa SDK's ChannelGatewayContext type
  */
 export interface GatewayStartContext {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   accountId: string;
   account: ResolvedAccount;
   runtime: unknown;
@@ -384,7 +384,7 @@ export interface GatewayStopResult {
 
 /**
  * DingTalk channel plugin definition
- * Matches OpenClaw SDK's ChannelPlugin type structure
+ * Matches nexa SDK's ChannelPlugin type structure
  */
 export interface DingTalkChannelPlugin {
   id: 'dingtalk';
@@ -418,7 +418,7 @@ export interface DingTalkChannelPlugin {
   };
   onboarding?: {
     channel: string;
-    getStatus: (params: { cfg: OpenClawConfig }) => Promise<{
+    getStatus: (params: { cfg: NexaConfig }) => Promise<{
       channel: string;
       configured: boolean;
       statusLines: string[];
@@ -426,20 +426,20 @@ export interface DingTalkChannelPlugin {
       quickstartScore: number;
     }>;
     configure: (params: {
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       prompter: unknown;
       accountOverrides: Record<string, string>;
       shouldPromptAccountIds: boolean;
-    }) => Promise<{ cfg: OpenClawConfig; accountId: string }>;
+    }) => Promise<{ cfg: NexaConfig; accountId: string }>;
   };
   config: {
-    listAccountIds: (cfg: OpenClawConfig) => string[];
-    resolveAccount: (cfg: OpenClawConfig, accountId?: string | null) => ResolvedAccount & { configured: boolean };
-    defaultAccountId: (cfg?: OpenClawConfig) => string;
-    setAccountEnabled?: (params: { cfg: OpenClawConfig; accountId: string; enabled: boolean }) => OpenClawConfig;
-    deleteAccount?: (params: { cfg: OpenClawConfig; accountId: string }) => OpenClawConfig;
-    isConfigured: (account: ResolvedAccount, cfg?: OpenClawConfig) => boolean;
-    describeAccount: (account: ResolvedAccount, cfg?: OpenClawConfig) => AccountDescriptor;
+    listAccountIds: (cfg: NexaConfig) => string[];
+    resolveAccount: (cfg: NexaConfig, accountId?: string | null) => ResolvedAccount & { configured: boolean };
+    defaultAccountId: (cfg?: NexaConfig) => string;
+    setAccountEnabled?: (params: { cfg: NexaConfig; accountId: string; enabled: boolean }) => NexaConfig;
+    deleteAccount?: (params: { cfg: NexaConfig; accountId: string }) => NexaConfig;
+    isConfigured: (account: ResolvedAccount, cfg?: NexaConfig) => boolean;
+    describeAccount: (account: ResolvedAccount, cfg?: NexaConfig) => AccountDescriptor;
   };
   configSchema?: {
     schema: Record<string, unknown>;
@@ -449,7 +449,7 @@ export interface DingTalkChannelPlugin {
     >;
   };
   security: {
-    resolveDmPolicy: (ctx: { account: ResolvedAccount; cfg: OpenClawConfig }) => {
+    resolveDmPolicy: (ctx: { account: ResolvedAccount; cfg: NexaConfig }) => {
       policy: 'open' | 'pairing' | 'allowlist';
       allowFrom: string[];
       policyPath: string;
@@ -457,10 +457,10 @@ export interface DingTalkChannelPlugin {
       approveHint: string;
       normalizeEntry: (raw: string) => string;
     } | null;
-    collectWarnings?: (ctx: { account: ResolvedAccount; cfg: OpenClawConfig }) => string[] | Promise<string[]>;
+    collectWarnings?: (ctx: { account: ResolvedAccount; cfg: NexaConfig }) => string[] | Promise<string[]>;
   };
   groups: {
-    resolveRequireMention: (ctx: { cfg: OpenClawConfig; groupChannel?: string; groupId?: string }) => boolean;
+    resolveRequireMention: (ctx: { cfg: NexaConfig; groupChannel?: string; groupId?: string }) => boolean;
     resolveGroupIntroHint?: (ctx: { groupId?: string; groupChannel?: string }) => string | undefined;
   };
   messaging: {
@@ -473,14 +473,14 @@ export interface DingTalkChannelPlugin {
   outbound: {
     deliveryMode: 'direct' | 'gateway' | 'hybrid';
     resolveTarget?: (params: {
-      cfg?: OpenClawConfig;
+      cfg?: NexaConfig;
       to?: string;
       allowFrom?: string[];
       accountId?: string | null;
       mode?: string;
     }) => { ok: true; to: string } | { ok: false; error: Error };
     sendText: (ctx: {
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       to: string;
       text: string;
       replyToId?: string | null;
@@ -488,7 +488,7 @@ export interface DingTalkChannelPlugin {
       accountId?: string | null;
     }) => Promise<{ ok: boolean; messageId?: string; data?: unknown; error?: string | Error }>;
     sendMedia?: (ctx: {
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       to: string;
       text?: string;
       mediaUrl?: string;
@@ -507,18 +507,18 @@ export interface DingTalkChannelPlugin {
     }>;
     buildChannelSummary?: (params: {
       account: ResolvedAccount;
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       defaultAccountId: string;
       snapshot: ChannelSnapshot;
     }) => Record<string, unknown>;
     probeAccount?: (params: {
       account: ResolvedAccount & { configured: boolean };
       timeoutMs: number;
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
     }) => Promise<{ ok: boolean; error?: string; details?: unknown }>;
     buildAccountSnapshot: (params: {
       account: ResolvedAccount & { configured: boolean };
-      cfg: OpenClawConfig;
+      cfg: NexaConfig;
       runtime?: ChannelSnapshot;
       snapshot?: ChannelSnapshot;
       probe?: { ok: boolean; error?: string; details?: unknown };
@@ -666,7 +666,7 @@ const DEFAULT_ACCOUNT_ID = 'default';
 /**
  * List all DingTalk account IDs from config
  */
-export function listDingTalkAccountIds(cfg: OpenClawConfig): string[] {
+export function listDingTalkAccountIds(cfg: NexaConfig): string[] {
   const dingtalk = cfg.channels?.dingtalk as DingTalkChannelConfig | undefined;
   if (!dingtalk) return [];
 
@@ -696,7 +696,7 @@ export interface ResolvedDingTalkAccount extends DingTalkConfig {
 /**
  * Resolve a specific DingTalk account configuration
  */
-export function resolveDingTalkAccount(cfg: OpenClawConfig, accountId?: string | null): ResolvedDingTalkAccount {
+export function resolveDingTalkAccount(cfg: NexaConfig, accountId?: string | null): ResolvedDingTalkAccount {
   const id = accountId || DEFAULT_ACCOUNT_ID;
   const dingtalk = cfg.channels?.dingtalk as DingTalkChannelConfig | undefined;
 

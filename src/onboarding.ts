@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from 'openclaw/plugin-sdk';
+import type { NexaConfig } from 'nexa/plugin-sdk';
 import type { DingTalkConfig, DingTalkChannelConfig } from './types.js';
 import { listDingTalkAccountIds, resolveDingTalkAccount } from './types.js';
 
@@ -33,7 +33,7 @@ function parseList(value: string): string[] {
 }
 
 function formatDocsLink(path: string, label: string): string {
-  return `https://docs.openclaw.dev${path} (${label})`;
+  return `https://docs.nexa.dev${path} (${label})`;
 }
 
 function normalizeAccountId(id: string): string {
@@ -46,11 +46,11 @@ function normalizeAccountId(id: string): string {
 }
 
 function applyAccountNameToChannelSection(params: {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   channelKey: string;
   accountId: string;
   name?: string;
-}): OpenClawConfig {
+}): NexaConfig {
   const { cfg, channelKey, name } = params;
   if (!name) return cfg;
   const base = cfg.channels?.[channelKey] as DingTalkChannelConfig | undefined;
@@ -64,11 +64,11 @@ function applyAccountNameToChannelSection(params: {
 }
 
 async function promptAccountId(options: {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   prompter: WizardPrompter;
   label: string;
   currentId: string;
-  listAccountIds: (cfg: OpenClawConfig) => string[];
+  listAccountIds: (cfg: NexaConfig) => string[];
   defaultAccountId: string;
 }): Promise<string> {
   const existingIds = options.listAccountIds(options.cfg);
@@ -106,10 +106,10 @@ async function noteDingTalkHelp(prompter: WizardPrompter): Promise<void> {
 }
 
 function applyAccountConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: NexaConfig;
   accountId: string;
   input: Partial<DingTalkConfig>;
-}): OpenClawConfig {
+}): NexaConfig {
   const { cfg, accountId, input } = params;
   const useDefault = accountId === DEFAULT_ACCOUNT_ID;
 
@@ -174,7 +174,7 @@ function applyAccountConfig(params: {
 
 export const dingtalkOnboardingAdapter = {
   channel,
-  getStatus: ({ cfg }: { cfg: OpenClawConfig }) => {
+  getStatus: ({ cfg }: { cfg: NexaConfig }) => {
     const accountIds = listDingTalkAccountIds(cfg);
     const configured =
       accountIds.length > 0
@@ -195,7 +195,7 @@ export const dingtalkOnboardingAdapter = {
     accountOverrides,
     shouldPromptAccountIds,
   }: {
-    cfg: OpenClawConfig;
+    cfg: NexaConfig;
     prompter: WizardPrompter;
     accountOverrides: Record<string, string>;
     shouldPromptAccountIds: boolean;

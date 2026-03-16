@@ -1,9 +1,9 @@
-declare module 'openclaw/plugin-sdk' {
-  export interface OpenClawPluginApi {
+declare module 'nexa/plugin-sdk' {
+  export interface NexaPluginApi {
     [key: string]: any;
   }
 
-  export interface OpenClawConfig {
+  export interface NexaConfig {
     [key: string]: any;
   }
 

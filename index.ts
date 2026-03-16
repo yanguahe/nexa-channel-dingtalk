@@ -1,5 +1,5 @@
-import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
-import { emptyPluginConfigSchema } from 'openclaw/plugin-sdk';
+import type { NexaPluginApi } from 'nexa/plugin-sdk';
+import { emptyPluginConfigSchema } from 'nexa/plugin-sdk';
 import { dingtalkPlugin } from './src/channel';
 import { setDingTalkRuntime } from './src/runtime';
 
@@ -8,7 +8,7 @@ const plugin = {
   name: 'DingTalk Channel',
   description: 'DingTalk (钉钉) messaging channel via Stream mode',
   configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi): void {
+  register(api: NexaPluginApi): void {
     setDingTalkRuntime(api.runtime);
     api.registerChannel({ plugin: dingtalkPlugin });
   },

@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/dingtalk",
+  "name": "@nexa/dingtalk",
   "version": "2.5.1",
-  "description": "DingTalk (钉钉) channel plugin for OpenClaw",
+  "description": "DingTalk (钉钉) channel plugin for nexa",
   "main": "index.ts",
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "keywords": [
     "clawdbot",
-    "openclaw",
+    "nexa",
     "dingtalk",
     "channel",
     "stream",
@@ -35,7 +35,7 @@
     "prettier": "^3.0.0",
     "typescript": "^5.3.0"
   },
-  "openclaw": {
+  "nexa": {
     "extensions": [
       "./index.ts"
     ],
@@ -57,7 +57,7 @@
       ]
     },
     "install": {
-      "npmSpec": "@openclaw/dingtalk",
+      "npmSpec": "@nexa/dingtalk",
       "localPath": "extensions/dingtalk-channel",
       "defaultChoice": "local"
     }
