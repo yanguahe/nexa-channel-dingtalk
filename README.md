@@ -455,6 +455,8 @@ await finishAICard(card, finalText, log);
 - **src/types.ts**: 类型定义
 - **utils.ts**: 通用工具函数
 
+git@github.com:soimy/openclaw-channel-dingtalk.git
+
 ## 许可
 
 MIT
